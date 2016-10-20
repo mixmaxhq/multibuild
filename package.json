@@ -1,0 +1,34 @@
+{
+  "name": "multibuild",
+  "version": "1.0.0",
+  "description": "Build multiple related ES6 module bundles using gulp and rollup.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mixmaxhq/multibuild.git"
+  },
+  "keywords": [
+    "ES6",
+    "modules",
+    "gulp",
+    "rollup",
+    "bundle",
+    "build"
+  ],
+  "author": "Jeff Wear <jeff@mixmax.com> (https://mixmax.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mixmaxhq/multibuild/issues"
+  },
+  "homepage": "https://github.com/mixmaxhq/multibuild#readme",
+  "dependencies": {
+    "gulp-plumber": "^1.1.0",
+    "rollup-stream": "^1.14.0",
+    "run-sequence": "^1.2.2",
+    "underscore": "^1.8.3",
+    "vinyl-source-buffer": "^1.1.1"
+  }
+}
