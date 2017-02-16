@@ -71,10 +71,9 @@ class MultiBuild {
     }).map(MultiBuild._task);
 
     if (!_.isEmpty(changedTargetTasks)) {
-      // Run the target tasks sequentially, so that each run can benefit from the cached AST from
-      // the previous runs--this appears faster in some local testing. It's also not safe to run in
-      // parallel with the latest Rollup until https://github.com/rollup/rollup/issues/1010 is fixed.
-      runSequence.use(this._gulp).apply(undefined, changedTargetTasks);
+      // Run the target tasks in in parallel since most of the cached AST is
+      // probably still valid anyway.
+      this._gulp.start(changedTargetTasks);
     }
   }
 
