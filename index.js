@@ -54,7 +54,7 @@ class MultiBuild {
   runAll(done) {
     // We run the target tasks sequentially, so that each run can benefit from the cached AST from
     // the previous runs.
-    var targetTasks = this._targets.map(MultiBuild._task);
+    var targetTasks = this._targets.map(MultiBuild.task);
     runSequence.use(this._gulp).apply(undefined, targetTasks.concat(done));
   }
 
@@ -68,7 +68,7 @@ class MultiBuild {
     var changedTargetTasks = _.filter(this._targets, (target) => {
       var dependencies = this._targetDependencyMap[target];
       return dependencies && dependencies.has(path);
-    }).map(MultiBuild._task);
+    }).map(MultiBuild.task);
 
     if (!_.isEmpty(changedTargetTasks)) {
       // Run the target tasks sequentially, so that each run can benefit from the cached AST from
@@ -85,7 +85,7 @@ class MultiBuild {
    */
   _registerTasks(options) {
     this._targets.forEach((target) => {
-      this._gulp.task(MultiBuild._task(target), () => {
+      this._gulp.task(MultiBuild.task(target), () => {
         // Reset the dependencies in case we've removed some imports.
         var targetDependencies = this._targetDependencyMap[target] = new Set();
 
@@ -124,7 +124,7 @@ class MultiBuild {
    * @param {String} target
    * @return {String} task
    */
-  static _task(target) {
+  static task(target) {
     return `js:${target}`;
   }
 }
