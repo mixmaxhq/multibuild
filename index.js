@@ -29,7 +29,8 @@ class MultiBuild {
    *    methods, or a function that returns such options when invoked with a target.
    *  @param {Function} output - A function that will be invoked with a target and a readable stream
    *    containing the bundled JS as a Vinyl buffer, ready for piping through further transformations
-   *    or to disk. The function should return its final stream.
+   *    or to disk. The buffer will be given the filename `${target}.js` (you may of course rename).
+   *    The function should return the final stream.
    */
   constructor(options) {
     this._gulp = options.gulp;
@@ -89,10 +90,9 @@ class MultiBuild {
         // Reset the dependencies in case we've removed some imports.
         var targetDependencies = this._targetDependencyMap[target] = new Set();
 
-        var entry = options.entry(target);
-
         var rollupOptions = _.defaults({
-          entry,
+          entry: options.entry(target),
+
           // We depend partially on undocumented behavior. The cache option technically contains a bundle,
           // and we're assuming based on current behavior that it only extracts the cached AST from the
           // old bundle. See
@@ -112,7 +112,7 @@ class MultiBuild {
                 });
               })
               .pipe(plumber())
-              .pipe(buffer(entry))
+              .pipe(buffer(`${target}.js`))
           );
       });
     });

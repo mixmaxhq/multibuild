@@ -65,8 +65,9 @@ var build = new MultiBuild({
   },
 
   // A function that will be invoked with a target and a readable stream containing the bundled JS
-  // as a Vinyl buffer, ready for piping through further transformations or to disk. The function
-  // should return a stream.
+  // as a Vinyl buffer, ready for piping through further transformations or to disk. The buffer will
+  // be given the filename `${target}.js` (you may of course rename). The function should return the
+  // final stream.
   output: (target, input) => {
     if (target === 'spec') {
       return input
