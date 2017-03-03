@@ -91,6 +91,11 @@ gulp.task('watch', function() {
 gulp.task('default', ['js', 'watch']);
 ```
 
+You can get the name of a task generated for a target with `MultiBuild.task`. This can be useful for specifying MultiBuild-generated build tasks as dependencies of your other tasks without having to hard-code the task name.
+```js
+var generatedTaskName = MultiBuild.task('targetName');
+```
+
 ## Contributing
 
 We welcome pull requests! Please lint your code using the JSHint configuration in this project.
