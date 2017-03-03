@@ -1,7 +1,6 @@
 "use strict";
 
 var _ = require('underscore');
-var plumber = require('gulp-plumber');
 var rollup = require('rollup-stream');
 var runSequence = require('run-sequence');
 var buffer = require('vinyl-source-buffer');
@@ -111,7 +110,6 @@ class MultiBuild {
                   this._cache.modules[module.id] = module;
                 });
               })
-              .pipe(plumber())
               .pipe(buffer(`${target}.js`))
           );
       });

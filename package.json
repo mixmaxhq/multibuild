@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/mixmaxhq/multibuild#readme",
   "dependencies": {
-    "gulp-plumber": "^1.1.0",
     "rollup-stream": "^1.14.0",
     "run-sequence": "^1.2.2",
     "underscore": "^1.8.3",
