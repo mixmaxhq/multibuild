@@ -102,5 +102,6 @@ We welcome pull requests! Please lint your code using the JSHint configuration i
 
 ## Release History
 
+* 1.0.1 Expose `task` as a public function.
 * 1.0.0 Initial release.
 
