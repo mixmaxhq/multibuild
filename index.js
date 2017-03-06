@@ -30,6 +30,8 @@ class MultiBuild {
    *    containing the bundled JS as a Vinyl buffer, ready for piping through further transformations
    *    or to disk. The buffer will be given the filename `${target}.js` (you may of course rename).
    *    The function should return the final stream.
+   *  @param {Boolean} [errorHandler] - Handler for errors emitted by `rollup-stream`. If this
+   *  option is omitted, emitted errors will be thrown.
    */
   constructor(options) {
     this._gulp = options.gulp;
@@ -86,9 +88,6 @@ class MultiBuild {
   _registerTasks(options) {
     this._targets.forEach((target) => {
       this._gulp.task(MultiBuild.task(target), () => {
-        // Reset the dependencies in case we've removed some imports.
-        var targetDependencies = this._targetDependencyMap[target] = new Set();
-
         var rollupOptions = _.defaults({
           entry: options.entry(target),
 
@@ -104,9 +103,20 @@ class MultiBuild {
         return options.output(
             target,
             rollup(rollupOptions)
+              .on('error', function(e) {
+                if (options.errorHandler) {
+                  this.emit('end');
+                  options.errorHandler(e);
+                } else {
+                  throw(e);
+                }
+              })
               .on('bundle', (bundle) => {
+                // Reset the dependencies in case we've removed some imports.
+                this._targetDependencyMap[target] = new Set();
+
                 bundle.modules.forEach((module) => {
-                  targetDependencies.add(module.id);
+                  this._targetDependencyMap[target].add(module.id);
                   this._cache.modules[module.id] = module;
                 });
               })
