@@ -68,6 +68,16 @@ class MultiBuild {
    */
   changed(path) {
     var changedTargetTasks = _.filter(this._targets, (target) => {
+      /**
+       * Tasks that have not yet run successfully will not be registered in `_targetDependencyMap`,
+       * which means that we won't know their dependencies. We always run these tasks on a file
+       * change until they succeed once and we get their dependencies, otherwise they will never be
+       * run after their first failure.
+       */
+      if (!_.has(this._targetDependencyMap, target)) {
+        return true;
+      }
+
       var dependencies = this._targetDependencyMap[target];
       return dependencies && dependencies.has(path);
     }).map(MultiBuild.task);
