@@ -30,6 +30,8 @@ class MultiBuild {
    *    containing the bundled JS as a Vinyl buffer, ready for piping through further transformations
    *    or to disk. The buffer will be given the filename `${target}.js` (you may of course rename).
    *    The function should return the final stream.
+   *  @param {Boolean} [errorHandler] - Handler for errors emitted by `rollup-stream`. If this
+   *  option is omitted, emitted errors will be thrown.
    */
   constructor(options) {
     this._gulp = options.gulp;
@@ -66,6 +68,16 @@ class MultiBuild {
    */
   changed(path) {
     var changedTargetTasks = _.filter(this._targets, (target) => {
+      /**
+       * Tasks that have not yet run successfully will not be registered in `_targetDependencyMap`,
+       * which means that we won't know their dependencies. We always run these tasks on a file
+       * change until they succeed once and we get their dependencies, otherwise they will never be
+       * run after their first failure.
+       */
+      if (!_.has(this._targetDependencyMap, target)) {
+        return true;
+      }
+
       var dependencies = this._targetDependencyMap[target];
       return dependencies && dependencies.has(path);
     }).map(MultiBuild.task);
@@ -86,9 +98,6 @@ class MultiBuild {
   _registerTasks(options) {
     this._targets.forEach((target) => {
       this._gulp.task(MultiBuild.task(target), () => {
-        // Reset the dependencies in case we've removed some imports.
-        var targetDependencies = this._targetDependencyMap[target] = new Set();
-
         var rollupOptions = _.defaults({
           entry: options.entry(target),
 
@@ -104,9 +113,20 @@ class MultiBuild {
         return options.output(
             target,
             rollup(rollupOptions)
+              .on('error', function(e) {
+                if (options.errorHandler) {
+                  this.emit('end');
+                  options.errorHandler(e);
+                } else {
+                  throw(e);
+                }
+              })
               .on('bundle', (bundle) => {
+                // Reset the dependencies in case we've removed some imports.
+                this._targetDependencyMap[target] = new Set();
+
                 bundle.modules.forEach((module) => {
-                  targetDependencies.add(module.id);
+                  this._targetDependencyMap[target].add(module.id);
                   this._cache.modules[module.id] = module;
                 });
               })

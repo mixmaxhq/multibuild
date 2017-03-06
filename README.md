@@ -45,6 +45,21 @@ var build = new MultiBuild({
     'spec'
   ],
 
+  /**
+   * Optional handler for rollup-emitted errors. We allow the passing of an error handler instead of
+   * conditionally applying `gulp-plumber` because `gulp-plumber` is incompatible with
+   * `rollup-stream` per https://github.com/Permutatrix/rollup-stream/issues/1.
+   */
+  errorHandler(e) {
+    if (process.env.NODE_ENV !== 'production') {
+      // Keep watching for changes on failure.
+      console.error(e);
+    } else {
+      // Throw so that gulp exits.
+      throw(e);
+    }
+  },
+
   // A function that returns the Rollup entry point when invoked with a target.
   entry: (target) => (target === 'spec') ? 'spec/**/*.js' : `src/js/main-${target}.js`,
 
