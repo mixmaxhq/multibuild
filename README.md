@@ -24,7 +24,13 @@ simultaneously build your application bundle and your test bundle.
 
 ## Installation
 
-`npm install multibuild --save`
+```
+$ yarn add multibuild
+```
+or
+```
+$ npm install multibuild --save
+```
 
 ## Usage
 
