@@ -258,15 +258,15 @@ replace-ext@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/replace-ext/-/replace-ext-0.0.1.tgz#29bbd92078a739f0bcce2b4ee41e837953522924"
 
-rollup-stream@^1.14.0:
-  version "1.19.0"
-  resolved "https://registry.yarnpkg.com/rollup-stream/-/rollup-stream-1.19.0.tgz#8ab70d3970d8ec8529f1c1d7a688d8d65f90599a"
+rollup-stream@^1.23.1:
+  version "1.23.1"
+  resolved "https://registry.yarnpkg.com/rollup-stream/-/rollup-stream-1.23.1.tgz#084b489cc4f8d780a27c187a53cef6598171f102"
   dependencies:
-    rollup "^0.41.4"
+    rollup "^0.45.1"
 
-rollup@^0.41.4:
-  version "0.41.6"
-  resolved "https://registry.yarnpkg.com/rollup/-/rollup-0.41.6.tgz#e0d05497877a398c104d816d2733a718a7a94e2a"
+rollup@^0.45.1:
+  version "0.45.2"
+  resolved "https://registry.yarnpkg.com/rollup/-/rollup-0.45.2.tgz#63a284c2b31234656f24e9e9717fabb6a7f0fa43"
   dependencies:
     source-map-support "^0.4.0"
 
