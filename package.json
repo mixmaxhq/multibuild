@@ -1,6 +1,6 @@
 {
   "name": "multibuild",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Build multiple related ES6 module bundles using gulp and rollup.",
   "main": "index.js",
   "scripts": {
