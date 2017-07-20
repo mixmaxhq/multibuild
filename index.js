@@ -42,8 +42,7 @@ class MultiBuild {
     this._targets = options.targets;
 
     // Targets that should not use rollup's cache.
-    this._skipCacheMap = {};
-    (options.skipCache || []).forEach((target) => this._skipCacheMap[target] = true);
+    this._skipCacheMap = new Set(options.skipCache || []);
 
     // Cache parsed modules from rollup.
     this._cache = { modules: {} };
@@ -106,7 +105,7 @@ class MultiBuild {
       this._gulp.task(MultiBuild.task(target), () => {
         var rollupOptions = _.defaults({
           entry: options.entry(target),
-        }, this._skipCacheMap[target] ? {} : {
+        }, this._skipCacheMap.has(target) ? {} : {
           /**
            * We depend partially on undocumented behavior. The cache option technically contains a
            * bundle, and we're assuming based on current behavior that it only extracts the cached
