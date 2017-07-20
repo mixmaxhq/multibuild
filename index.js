@@ -22,6 +22,8 @@ class MultiBuild {
    *  @param {Gulp} gulp - The gulp instance with which to register build tasks.
    *  @param {Array<String>} targets - The names of the targets to build, arbitrary identifiers.
    *    Must not contain spaces since they will be used to form the names of the build tasks.
+   *  @param {Array<String>} [skipCache] - Names of targets that should not use rollup's cache, eg
+   *  because they are processed differently than other targets. Defaults to [].
    *  @param {Function} entry - A function that returns the Rollup entry point when invoked with a
    *    target.
    *  @param {Object|Function=} rollupOptions - Options to pass to Rollup's `rollup` and `generate`
@@ -38,6 +40,9 @@ class MultiBuild {
 
     // The names of the targets.
     this._targets = options.targets;
+
+    // Targets that should not use rollup's cache.
+    this._skipCacheMap = new Set(options.skipCache || []);
 
     // Cache parsed modules from rollup.
     this._cache = { modules: {} };
@@ -100,11 +105,13 @@ class MultiBuild {
       this._gulp.task(MultiBuild.task(target), () => {
         var rollupOptions = _.defaults({
           entry: options.entry(target),
-
-          // We depend partially on undocumented behavior. The cache option technically contains a bundle,
-          // and we're assuming based on current behavior that it only extracts the cached AST from the
-          // old bundle. See
-          // https://github.com/rollup/rollup/blob/5c0597d70a4a0800bd320d20a229050d73c6daac/src/Bundle.js#L22.
+        }, this._skipCacheMap.has(target) ? {} : {
+          /**
+           * We depend partially on undocumented behavior. The cache option technically contains a
+           * bundle, and we're assuming based on current behavior that it only extracts the cached
+           * AST from the old bundle. See
+           * https://github.com/rollup/rollup/blob/5c0597d70a4a0800bd320d20a229050d73c6daac/src/Bundle.js#L22.
+           */
           cache: {
             modules: _.values(this._cache.modules)
           }

@@ -51,6 +51,14 @@ var build = new MultiBuild({
     'spec'
   ],
 
+  // Names of targets that should not use rollup's cache, eg  because they are processed differently
+  // than other targets.
+  //
+  // Defaults to [].
+  skipCache: [
+    'spec'
+  ],
+
   /**
    * Optional handler for rollup-emitted errors. We allow the passing of an error handler instead of
    * conditionally applying `gulp-plumber` because `gulp-plumber` is incompatible with
@@ -81,6 +89,8 @@ var build = new MultiBuild({
       // multi-entry lets us include all the test specs without having to explicitly import them
       // in a single `main-spec.js` script.
       options.plugins.push(multiEntry({exports: false}));
+
+      // Additional processing done here (eg target-specific transpilation) may entice you to use the `skipCache` option.
     }
     return options;
   },
@@ -130,4 +140,3 @@ We welcome pull requests! Please lint your code using the JSHint configuration i
 * 2.0.0 Name output buffers after the targets and don't swallow errors.
 * 1.0.1 Expose `task` as a public function.
 * 1.0.0 Initial release.
-
