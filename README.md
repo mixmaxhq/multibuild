@@ -131,13 +131,3 @@ var generatedTaskName = MultiBuild.task('targetName');
 ## Contributing
 
 We welcome pull requests! Please lint your code using the JSHint configuration in this project.
-
-## Release History
-
-* 2.2.0 Add `skipCache` option for specifying targets that should not use rollup's cache.
-* 2.1.1 Upgrade rollup to pick up memory leak fix in https://github.com/rollup/rollup/pull/1470.
-* 2.1.0 Allow for the passing of an error handler. Re-run tasks that fail on first run on any
-  subsequent change until they succeed.
-* 2.0.0 Name output buffers after the targets and don't swallow errors.
-* 1.0.1 Expose `task` as a public function.
-* 1.0.0 Initial release.
