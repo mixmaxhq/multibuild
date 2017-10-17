@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/mixmaxhq/multibuild#readme",
   "dependencies": {
-    "rollup-stream": "^1.23.1",
+    "rollup-stream": "1.23.1",
     "run-sequence": "^1.2.2",
     "underscore": "^1.8.3",
     "vinyl-source-buffer": "^1.1.1"
