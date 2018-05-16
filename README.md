@@ -25,7 +25,7 @@ simultaneously build your application bundle and your test bundle.
 ## Installation
 
 ```
-$ yarn add multibuild
+$ npm install multibuild
 ```
 or
 ```
