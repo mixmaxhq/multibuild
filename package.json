@@ -25,9 +25,13 @@
   },
   "homepage": "https://github.com/mixmaxhq/multibuild#readme",
   "dependencies": {
-    "rollup-stream": "1.23.1",
+    "@mixmaxhq/rollup-stream": "^2.0.0",
     "run-sequence": "^1.2.2",
     "underscore": "^1.8.3",
     "vinyl-source-buffer": "^1.1.1"
+  },
+  "devDependencies": {
+    "eslint": "^5.4.0",
+    "eslint-config-mixmax": "^1.2.0"
   }
 }
