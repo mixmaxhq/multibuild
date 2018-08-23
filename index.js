@@ -1,9 +1,9 @@
-"use strict";
+'use strict';
 
-var _ = require('underscore');
-var rollup = require('rollup-stream');
-var runSequence = require('run-sequence');
-var buffer = require('vinyl-source-buffer');
+const _ = require('underscore');
+const rollup = require('@mixmaxhq/rollup-stream');
+const runSequence = require('run-sequence');
+const buffer = require('vinyl-source-buffer');
 
 /**
  * Builds multiple ES6 module bundles and rebuilds bundles as files change.
@@ -11,8 +11,10 @@ var buffer = require('vinyl-source-buffer');
  * Initialize a multibuild, then call `runAll`. This will build all target bundles and register
  * dependencies on the files that comprise each bundle. Then, as files change, call `changed`:
  *
- *   var build = new MultiBuild(...);
- *   gulp.watch('src/**', (event) => build.changed(event.path));
+ * ```js
+ * const build = new MultiBuild(...);
+ * gulp.watch('src/**', (event) => build.changed(event.path));
+ * ```
  *
  * Bundles that include that file will be rebuilt.
  */
@@ -24,7 +26,7 @@ class MultiBuild {
    *    Must not contain spaces since they will be used to form the names of the build tasks.
    *  @param {Array<String>} [skipCache] - Names of targets that should not use rollup's cache, eg
    *  because they are processed differently than other targets. Defaults to [].
-   *  @param {Function} entry - A function that returns the Rollup entry point when invoked with a
+   *  @param {Function} input - A function that returns the Rollup entry point when invoked with a
    *    target.
    *  @param {Object|Function=} rollupOptions - Options to pass to Rollup's `rollup` and `generate`
    *    methods, or a function that returns such options when invoked with a target.
@@ -32,8 +34,8 @@ class MultiBuild {
    *    containing the bundled JS as a Vinyl buffer, ready for piping through further transformations
    *    or to disk. The buffer will be given the filename `${target}.js` (you may of course rename).
    *    The function should return the final stream.
-   *  @param {Boolean} [errorHandler] - Handler for errors emitted by `rollup-stream`. If this
-   *  option is omitted, emitted errors will be thrown.
+   *  @param {Function} [errorHandler] - Handler for errors emitted by `rollup-stream`. If this
+   *    option is omitted, emitted errors will be thrown.
    */
   constructor(options) {
     this._gulp = options.gulp;
@@ -61,7 +63,7 @@ class MultiBuild {
   runAll(done) {
     // We run the target tasks sequentially, so that each run can benefit from the cached AST from
     // the previous runs.
-    var targetTasks = this._targets.map(MultiBuild.task);
+    const targetTasks = this._targets.map(MultiBuild.task);
     runSequence.use(this._gulp).apply(undefined, targetTasks.concat(done));
   }
 
@@ -72,7 +74,7 @@ class MultiBuild {
    * @param {String} path - The path of the file that changed.
    */
   changed(path) {
-    var changedTargetTasks = _.filter(this._targets, (target) => {
+    const changedTargetTasks = _.filter(this._targets, (target) => {
       /**
        * Tasks that have not yet run successfully will not be registered in `_targetDependencyMap`,
        * which means that we won't know their dependencies. We always run these tasks on a file
@@ -83,7 +85,7 @@ class MultiBuild {
         return true;
       }
 
-      var dependencies = this._targetDependencyMap[target];
+      const dependencies = this._targetDependencyMap[target];
       return dependencies && dependencies.has(path);
     }).map(MultiBuild.task);
 
@@ -103,8 +105,8 @@ class MultiBuild {
   _registerTasks(options) {
     this._targets.forEach((target) => {
       this._gulp.task(MultiBuild.task(target), () => {
-        var rollupOptions = _.defaults({
-          entry: options.entry(target),
+        const rollupOptions = _.defaults({
+          input: options.input(target),
         }, this._skipCacheMap.has(target) ? {} : {
           /**
            * We depend partially on undocumented behavior. The cache option technically contains a
@@ -118,27 +120,27 @@ class MultiBuild {
         }, _.isFunction(options.rollupOptions) ? options.rollupOptions(target) : options.rollupOptions);
 
         return options.output(
-            target,
-            rollup(rollupOptions)
-              .on('error', function(e) {
-                if (options.errorHandler) {
-                  this.emit('end');
-                  options.errorHandler(e);
-                } else {
-                  throw(e);
-                }
-              })
-              .on('bundle', (bundle) => {
-                // Reset the dependencies in case we've removed some imports.
-                this._targetDependencyMap[target] = new Set();
+          target,
+          rollup(rollupOptions)
+            .on('error', function(e) {
+              if (options.errorHandler) {
+                this.emit('end');
+                options.errorHandler(e);
+              } else {
+                throw e;
+              }
+            })
+            .on('bundle', (bundle) => {
+              // Reset the dependencies in case we've removed some imports.
+              this._targetDependencyMap[target] = new Set();
 
-                bundle.modules.forEach((module) => {
-                  this._targetDependencyMap[target].add(module.id);
-                  this._cache.modules[module.id] = module;
-                });
-              })
-              .pipe(buffer(`${target}.js`))
-          );
+              bundle.modules.forEach((module) => {
+                this._targetDependencyMap[target].add(module.id);
+                this._cache.modules[module.id] = module;
+              });
+            })
+            .pipe(buffer(`${target}.js`))
+        );
       });
     });
   }

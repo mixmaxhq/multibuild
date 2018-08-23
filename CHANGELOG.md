@@ -1,5 +1,7 @@
 ## Release History
 
+* 3.0.0 Use latest rollup by using our own rollup-stream
+
 * 2.2.1 Pin rollup-stream to avoid breaking rollup-plugin-multi-entry
 
 * 2.2.0 Add `skipCache` option for specifying targets that should not use rollup's cache.
