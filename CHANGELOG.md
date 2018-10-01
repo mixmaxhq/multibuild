@@ -1,5 +1,7 @@
 ## Release History
 
+* 3.1.0 Add cache group support
+
 * 3.0.0 Use latest rollup by using our own rollup-stream
 
   Please update the options you pass to rollup, particularly: `entry` → `input`, and
