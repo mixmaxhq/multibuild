@@ -48,6 +48,8 @@ var build = new MultiBuild({
   // form the names of the build tasks.
   targets: [
     'app',
+    'legacy-app',
+    'app-vendor',
     'spec'
   ],
 
@@ -58,6 +60,18 @@ var build = new MultiBuild({
   skipCache: [
     'spec'
   ],
+
+  // Object/Map that specifies groups of targets which should share cache artifacts. Defaults to
+  // sharing the cache between all targets. Targets not specified here will use a default cache
+  // group, so you can add new cache groups separate from most other targets.
+  cacheGroups: {
+    // app-vendor uses rollup-plugin-alias, which would otherwise pollute the build cache with the
+    // contents of some aliased modules from this target. Without this cache group, that code would
+    // get used in other targets despite the alias not being specified for them.
+    vendored: [
+      'app-vendor'
+    ]
+  },
 
   /**
    * Optional handler for rollup-emitted errors. We allow the passing of an error handler instead of

@@ -141,8 +141,8 @@ class MultiBuild {
    * @param {Function} done - Callback.
    */
   runAll(done) {
-    // We run the groups in parallel, but each target tasks with a group sequentially, so that each
-    // run can benefit from the cached AST from the previous runs.
+    // We run the groups in parallel, but each target tasks within a group sequentially, so that
+    // each run can benefit from the cached AST from the previous runs.
     runSequence.use(this._gulp)(this.taskGroups(), done);
   }
 
