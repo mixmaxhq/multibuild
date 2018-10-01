@@ -5,6 +5,25 @@ const rollup = require('@mixmaxhq/rollup-stream');
 const runSequence = require('run-sequence');
 const buffer = require('vinyl-source-buffer');
 
+// Sentinel value to detect the default cache.
+const DEFAULT_CACHE = Object.create(null);
+
+const identity = (v) => v;
+
+/**
+ * Coalesce the given value to a Map, and transform each value with the given iteratee.
+ *
+ * @param {?Map|Object} value The value to convert to a Map.
+ * @return {Map} The produced map. If the value was a Map, we return a shallow copy.
+ */
+function toMap(value, iteratee=identity) {
+  if (!value) {
+    return new Map();
+  }
+  const entries = value instanceof Map ? value : Object.entries(value);
+  return new Map(entries.map(([key, value]) => [key, iteratee(value)]));
+}
+
 /**
  * Builds multiple ES6 module bundles and rebuilds bundles as files change.
  *
@@ -24,6 +43,10 @@ class MultiBuild {
    *  @param {Gulp} gulp - The gulp instance with which to register build tasks.
    *  @param {Array<String>} targets - The names of the targets to build, arbitrary identifiers.
    *    Must not contain spaces since they will be used to form the names of the build tasks.
+   *  @param {Map<String,Set<String>|String[]>|Object<String,Set<String>|String[]>} cacheGroups The
+   *    mapping of cache group specifiers to target names. This segments the cached modules per-
+   *    group, which can help ensure that module IDs which resolve differently depending on target
+   *    don't poison the cache for other targets.
    *  @param {Array<String>} [skipCache] - Names of targets that should not use rollup's cache, eg
    *  because they are processed differently than other targets. Defaults to [].
    *  @param {Function} input - A function that returns the Rollup entry point when invoked with a
@@ -42,12 +65,60 @@ class MultiBuild {
 
     // The names of the targets.
     this._targets = options.targets;
+    this._targetsSet = new Set(options.targets);
 
-    // Targets that should not use rollup's cache.
+    // Targets that should not use a cache.
     this._skipCacheMap = new Set(options.skipCache || []);
 
-    // Cache parsed modules from rollup.
-    this._cache = { modules: {} };
+    // The mapping from cache group specifiers (names) to targets.
+    this._cacheGroups = toMap(options.cacheGroups || undefined, (v) => new Set(v));
+
+    // The mapping from targets to cache group specifiers (names).
+    this._targetCacheGroups = new Map();
+
+    // Ensure no target belongs to multiple cache groups, and determine the target => cache group
+    // mapping from the cache group => target mapping.
+    const discards = [];
+    for (const [group, targets] of this._cacheGroups) {
+      for (const target of targets) {
+        if (!this._targetsSet.has(target)) {
+          // We track the discards separately to avoid messing with the cacheGroups iterator.
+          discards.push([group, target]);
+          continue;
+        }
+        if (this._targetCacheGroups.has(target)) {
+          const otherGroup = this._targetCacheGroups.get(target);
+          throw new Error(`there must be a 1-many mapping between groups and targets, but target ${target} was assigned to both ${group} and ${otherGroup}`);
+        }
+        this._targetCacheGroups.set(target, group);
+      }
+    }
+
+    // Remove groups with non-existent targets.
+    for (const [group, target] of discards) {
+      const groupTargets = this._cacheGroups.get(group);
+      if (groupTargets.size) {
+        groupTargets.delete(target);
+        if (!groupTargets.size) {
+          this._cacheGroups.delete(group);
+        }
+      }
+    }
+
+    // If there are any targets with no explicit cache group, then add the default cache group.
+    let defaultGroup;
+    for (const target of this._targets) {
+      if (this._targetCacheGroups.has(target)) continue;
+      if (defaultGroup) {
+        defaultGroup.add(target);
+      } else {
+        defaultGroup = new Set([target]);
+        this._cacheGroups.set(DEFAULT_CACHE, defaultGroup);
+      }
+    }
+
+    // Groups of cached modules from rollup.
+    this._caches = new Map();
 
     // Map targets to the modules they include so we can conditionally rebuild.
     this._targetDependencyMap = {};
@@ -56,15 +127,23 @@ class MultiBuild {
   }
 
   /**
+   * Get all the task group specifiers.
+   *
+   * @return {String[]} The names of the task groups.
+   */
+  taskGroups() {
+    return [...this._cacheGroups.keys()].map(MultiBuild.taskGroup);
+  }
+
+  /**
    * Builds all target bundles and registers dependencies on the files that comprise each bundle.
    *
    * @param {Function} done - Callback.
    */
   runAll(done) {
-    // We run the target tasks sequentially, so that each run can benefit from the cached AST from
-    // the previous runs.
-    const targetTasks = this._targets.map(MultiBuild.task);
-    runSequence.use(this._gulp).apply(undefined, targetTasks.concat(done));
+    // We run the groups in parallel, but each target tasks with a group sequentially, so that each
+    // run can benefit from the cached AST from the previous runs.
+    runSequence.use(this._gulp)(this.taskGroups(), done);
   }
 
   /**
@@ -93,8 +172,30 @@ class MultiBuild {
       // Run the target tasks sequentially, so that each run can benefit from the cached AST from
       // the previous runs--this appears faster in some local testing. It's also not safe to run in
       // parallel with the latest Rollup until https://github.com/rollup/rollup/issues/1010 is fixed.
-      runSequence.use(this._gulp).apply(undefined, changedTargetTasks);
+      runSequence.use(this._gulp)(...changedTargetTasks);
     }
+  }
+
+  /**
+   * Get or initialize the cache for the given target.
+   *
+   * @param {String} target The target to cache.
+   * @param {Boolean=} init Whether to store the new cache object, if we made one.
+   * @return {Object} The cache object (containing a modules object).
+   */
+  _getCache(target, {init=false}={}) {
+    const hasGroup = this._targetCacheGroups.has(target);
+    const group = hasGroup ? this._targetCacheGroups.get(target) : DEFAULT_CACHE;
+    let cache = this._caches.get(group);
+    if (!cache) {
+      cache = {
+        modules: {}
+      };
+      if (init) {
+        this._caches.set(group, cache);
+      }
+    }
+    return cache;
   }
 
   /**
@@ -103,11 +204,19 @@ class MultiBuild {
    * @param {Object} options - The options passed to `MultiBuild`'s constructor.
    */
   _registerTasks(options) {
+    // Register the target groups so we can parallelize this work.
+    for (const [group, targets] of this._cacheGroups) {
+      this._gulp.task(MultiBuild.taskGroup(group), (done) => {
+        runSequence.use(this._gulp)(...[...targets].map(MultiBuild.task), done);
+      });
+    }
+
     this._targets.forEach((target) => {
+      const skipCache = this._skipCacheMap.has(target);
       this._gulp.task(MultiBuild.task(target), () => {
         const rollupOptions = _.defaults({
           input: options.input(target),
-        }, this._skipCacheMap.has(target) ? {} : {
+        }, skipCache ? {} : {
           /**
            * We depend partially on undocumented behavior. The cache option technically contains a
            * bundle, and we're assuming based on current behavior that it only extracts the cached
@@ -115,7 +224,7 @@ class MultiBuild {
            * https://github.com/rollup/rollup/blob/5c0597d70a4a0800bd320d20a229050d73c6daac/src/Bundle.js#L22.
            */
           cache: {
-            modules: _.values(this._cache.modules)
+            modules: _.values(this._getCache(target).modules)
           }
         }, _.isFunction(options.rollupOptions) ? options.rollupOptions(target) : options.rollupOptions);
 
@@ -134,15 +243,28 @@ class MultiBuild {
               // Reset the dependencies in case we've removed some imports.
               this._targetDependencyMap[target] = new Set();
 
+              const cache = !skipCache && this._getCache(target, {init: true});
               bundle.modules.forEach((module) => {
                 this._targetDependencyMap[target].add(module.id);
-                this._cache.modules[module.id] = module;
+                if (!skipCache) {
+                  cache.modules[module.id] = module;
+                }
               });
             })
             .pipe(buffer(`${target}.js`))
         );
       });
     });
+  }
+
+  /**
+   * Returns the name of the given group.
+   *
+   * @param {*} group
+   * @return {String} The gulp task name
+   */
+  static taskGroup(group) {
+    return group === DEFAULT_CACHE ? 'jsdefaultgroup' : `jsgroup:${group}`;
   }
 
   /**
