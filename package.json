@@ -18,6 +18,9 @@
     "bundle",
     "build"
   ],
+  "files": [
+    "index.js"
+  ],
   "author": "Jeff Wear <jeff@mixmax.com> (https://mixmax.com)",
   "license": "MIT",
   "bugs": {
