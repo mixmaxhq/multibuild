@@ -157,7 +157,7 @@ class MultiBuild {
    */
   runAllSequential(done) {
     // We support running the groups sequentially, in case the build fares better with less
-    // cross-group contention, but run each target task within a group sequentially, so that each
+    // cross-group contention. We run each target task within a group sequentially, so that each
     // run can benefit from the cached AST from the previous runs.
     runSequence.use(this._gulp)(...this.taskGroups(), done);
   }
