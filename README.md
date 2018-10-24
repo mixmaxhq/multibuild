@@ -73,6 +73,11 @@ var build = new MultiBuild({
     ]
   },
 
+  // Don't cache the resolved path of these module IDs. This lets you do fun things with aliasing
+  // and conditionally changing the resolved module based on bundle, without losing the benefits of
+  // caching across multiple targets.
+  skipResolveCache: ['jquery'],
+
   /**
    * Optional handler for rollup-emitted errors. We allow the passing of an error handler instead of
    * conditionally applying `gulp-plumber` because `gulp-plumber` is incompatible with
