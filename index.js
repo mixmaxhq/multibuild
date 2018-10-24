@@ -48,7 +48,7 @@ class MultiBuild {
    *    group, which can help ensure that module IDs which resolve differently depending on target
    *    don't poison the cache for other targets.
    *  @param {Array<String>} [skipCache] - Names of targets that should not use rollup's cache, eg
-   *  because they are processed differently than other targets. Defaults to [].
+   *    because they are processed differently than other targets. Defaults to [].
    *  @param {Function} input - A function that returns the Rollup entry point when invoked with a
    *    target.
    *  @param {Object|Function=} rollupOptions - Options to pass to Rollup's `rollup` and `generate`
