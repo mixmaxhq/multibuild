@@ -244,12 +244,12 @@ class MultiBuild {
               this._targetDependencyMap[target] = new Set();
 
               const cache = !skipCache && this._getCache(target, {init: true});
-              bundle.modules.forEach((module) => {
+              for (const module of bundle.modules) {
                 this._targetDependencyMap[target].add(module.id);
                 if (!skipCache) {
                   cache.modules[module.id] = module;
                 }
-              });
+              }
             })
             .pipe(buffer(`${target}.js`))
         );
