@@ -49,6 +49,7 @@ class MultiBuild {
    *    don't poison the cache for other targets.
    *  @param {Array<String>} [skipCache] - Names of targets that should not use rollup's cache, eg
    *    because they are processed differently than other targets. Defaults to [].
+   *  @param {String[]} [skipCacheModules] Module IDs to exclude from the cache.
    *  @param {Function} input - A function that returns the Rollup entry point when invoked with a
    *    target.
    *  @param {Object|Function=} rollupOptions - Options to pass to Rollup's `rollup` and `generate`
@@ -119,6 +120,9 @@ class MultiBuild {
 
     // Groups of cached modules from rollup.
     this._caches = new Map();
+
+    // Module IDs to exclude from the resolution cache.
+    this._skipResolveCache = new Set(options.skipResolveCache);
 
     // Map targets to the modules they include so we can conditionally rebuild.
     this._targetDependencyMap = {};
@@ -247,6 +251,15 @@ class MultiBuild {
               for (const module of bundle.modules) {
                 this._targetDependencyMap[target].add(module.id);
                 if (!skipCache) {
+                  const {resolvedIds} = module;
+                  for (const skip of this._skipResolveCache) {
+                    delete resolvedIds[skip];
+                    // We need to remove the commonjs proxy module as well as the module itself -
+                    // both modules are used during bundling by commonjs modules to correctly link
+                    // other modules.
+                    delete resolvedIds[`\0commonjs-proxy:${skip}`];
+                  }
+
                   cache.modules[module.id] = module;
                 }
               }
