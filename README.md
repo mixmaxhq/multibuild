@@ -16,6 +16,7 @@ then rebuilds them as files change.
 multibuild benefits:
 
 * Modules are cached between build targets
+  * Modules IDs can be flagged to bypass resolution caching for target-derived aliasing
 * Only affected targets are rebuilt when a file changes
 * Bundling is simpler and more consistent
 
@@ -132,6 +133,9 @@ var build = new MultiBuild({
 });
 
 // Builds all target bundles and registers dependencies on the files that comprise each bundle.
+// Alternatively, you can use build.runAllSequential to run the build groups in series. This
+// sometimes yields performance gains, and sometimes performance losses. It likely depends on the
+// overlap of work done by the different groups, as that may lead to disk contention.
 gulp.task('js', (cb) => build.runAll(cb));
 
 gulp.task('watch', function() {
