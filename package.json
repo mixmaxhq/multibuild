@@ -4,6 +4,8 @@
   "description": "Build multiple related ES6 module bundles using gulp and rollup.",
   "main": "index.js",
   "scripts": {
+    "ci": "npm run lint",
+    "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
