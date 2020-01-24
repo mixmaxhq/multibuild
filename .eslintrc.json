@@ -1,5 +1,5 @@
 {
-  "extends": "mixmax/node",
+  "extends": ["mixmax/node", "mixmax/prettier"],
   "rules": {
     "no-var": "error"
   }

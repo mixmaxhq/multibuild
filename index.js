@@ -16,7 +16,7 @@ const identity = (v) => v;
  * @param {?Map|Object} value The value to convert to a Map.
  * @return {Map} The produced map. If the value was a Map, we return a shallow copy.
  */
-function toMap(value, iteratee=identity) {
+function toMap(value, iteratee = identity) {
   if (!value) {
     return new Map();
   }
@@ -89,7 +89,9 @@ class MultiBuild {
         }
         if (this._targetCacheGroups.has(target)) {
           const otherGroup = this._targetCacheGroups.get(target);
-          throw new Error(`there must be a 1-many mapping between groups and targets, but target ${target} was assigned to both ${group} and ${otherGroup}`);
+          throw new Error(
+            `there must be a 1-many mapping between groups and targets, but target ${target} was assigned to both ${group} and ${otherGroup}`
+          );
         }
         this._targetCacheGroups.set(target, group);
       }
@@ -199,13 +201,13 @@ class MultiBuild {
    * @param {Boolean=} init Whether to store the new cache object, if we made one.
    * @return {Object} The cache object (containing a modules object).
    */
-  _getCache(target, {init=false}={}) {
+  _getCache(target, { init = false } = {}) {
     const hasGroup = this._targetCacheGroups.has(target);
     const group = hasGroup ? this._targetCacheGroups.get(target) : DEFAULT_CACHE;
     let cache = this._caches.get(group);
     if (!cache) {
       cache = {
-        modules: {}
+        modules: {},
       };
       if (init) {
         this._caches.set(group, cache);
@@ -230,19 +232,27 @@ class MultiBuild {
     this._targets.forEach((target) => {
       const skipCache = this._skipCacheMap.has(target);
       this._gulp.task(MultiBuild.task(target), () => {
-        const rollupOptions = _.defaults({
-          input: options.input(target),
-        }, skipCache ? {} : {
-          /**
-           * We depend partially on undocumented behavior. The cache option technically contains a
-           * bundle, and we're assuming based on current behavior that it only extracts the cached
-           * AST from the old bundle. See
-           * https://github.com/rollup/rollup/blob/5c0597d70a4a0800bd320d20a229050d73c6daac/src/Bundle.js#L22.
-           */
-          cache: {
-            modules: _.values(this._getCache(target).modules)
-          }
-        }, _.isFunction(options.rollupOptions) ? options.rollupOptions(target) : options.rollupOptions);
+        const rollupOptions = _.defaults(
+          {
+            input: options.input(target),
+          },
+          skipCache
+            ? {}
+            : {
+                /**
+                 * We depend partially on undocumented behavior. The cache option technically contains a
+                 * bundle, and we're assuming based on current behavior that it only extracts the cached
+                 * AST from the old bundle. See
+                 * https://github.com/rollup/rollup/blob/5c0597d70a4a0800bd320d20a229050d73c6daac/src/Bundle.js#L22.
+                 */
+                cache: {
+                  modules: _.values(this._getCache(target).modules),
+                },
+              },
+          _.isFunction(options.rollupOptions)
+            ? options.rollupOptions(target)
+            : options.rollupOptions
+        );
 
         return options.output(
           target,
@@ -259,11 +269,11 @@ class MultiBuild {
               // Reset the dependencies in case we've removed some imports.
               this._targetDependencyMap[target] = new Set();
 
-              const cache = !skipCache && this._getCache(target, {init: true});
+              const cache = !skipCache && this._getCache(target, { init: true });
               for (const module of bundle.modules) {
                 this._targetDependencyMap[target].add(module.id);
                 if (!skipCache) {
-                  const {resolvedIds} = module;
+                  const { resolvedIds } = module;
                   for (const skip of this._skipResolveCache) {
                     delete resolvedIds[skip];
                     // We need to remove the commonjs proxy module as well as the module itself -
